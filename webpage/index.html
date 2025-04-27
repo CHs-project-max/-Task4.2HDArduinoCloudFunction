@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Light</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+  
+    const firebaseConfig = {
+      apiKey: "AIzaSyAgCmR2SNT9zsawYxJH5TwWnMxw46OrDX0",
+      authDomain: "ytraffic-light-e5bd0.firebaseapp.com",
+      databaseURL: "https://traffic-light-e5bd0-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "traffic-light-e5bd0",
+    };
+    const db = getDatabase(initializeApp(firebaseConfig));
+  
+    const redBox = document.getElementById("red");
+    const yellowBox = document.getElementById("yellow");
+    const greenBox = document.getElementById("green");
+  
+    const checkboxes = [redBox, yellowBox, greenBox];
+  
+    function setLight(color) {
+      set(ref(db, "light"), color)
+    }
+  
+    checkboxes.forEach((box) => {
+      box.addEventListener("change", () => {
+        // Uncheck other boxes
+        checkboxes.forEach((other) => {
+          if (other !== box) other.checked = false;
+        });
+  
+        if (box.checked) {
+          setLight(box.id); // box.id is "red", "yellow", or "green"
+        } else {
+          setLight(""); // optional: blank if all unchecked
+        }
+      });
+    });
+  </script>
+  
+<body>
+    <div class="traffic-light">
+        <input type="checkbox" name="light" id="red">
+        <input type="checkbox" name="light" id="yellow">
+        <input type="checkbox" name="light" id="green">
+        
+        <label for="red" class="light red"></label>
+        <label for="yellow" class="light yellow"></label>
+        <label for="green" class="light green"></label>
+    </div>
+</body>
+</html> 
