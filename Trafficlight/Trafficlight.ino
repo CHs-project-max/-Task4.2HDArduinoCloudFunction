@@ -1,47 +1,61 @@
-#include "Firebase_Arduino_WiFiNINA.h"
-// Replace with your network credentials
-#define ssid "Telstra1AA87A"
-#define pass "rqp2vsnk44b7unk4"
+#include <WiFiNINA.h>
+#include "Secret.h"
+#define host "traffic-light-e5bd0-default-rtdb.asia-southeast1.firebasedatabase.app"
+#define auth "AIzaSyAgCmR2SNT9zsawYxJH5TwWnMxw46OrDX0"
 
-// Firebase info
-#define firebase_host "traffic-light-e5bd0-default-rtdb.asia-southeast1.firebasedatabase.app" // Your Firebase database URL
-#define api_key "AIzaSyAgCmR2SNT9zsawYxJH5TwWnMxw46OrDX0" // Optional, if needed for authentication
-#define path "/light"
-// LED pins for simulating traffic lights
-#define redPin  2
-#define yellowPin  3
-#define greenPin  4
-
-FirebaseData Data;
-
+#define redPin 2
+#define yellowPin 3
+#define greenPin 4
+WiFiSSLClient client;
 void setup() {
-  Serial.begin(9600);
+  // put your setup code here, to run once:
+  Serial.begin(115200);
 
-  // Connect to Wi-Fi
-  if (WiFi.begin(ssid, pass) == WL_CONNECTED) {
-    Serial.println("Connected to WiFi");
-  } else {
-    Serial.println("Failed to connect to WiFi");
-    while (true);  // Stop if Wi-Fi connection fails
+  while(WiFi.begin(SSID, pass) != WL_CONNECTED)
+  {
+    Serial.println(".");
+    delay(10);
   }
-  Firebase.begin(firebase_host, api_key, ssid, pass);
-  Firebase.reconnectWiFi(true);
-  // Set LED pins as output
+  Serial.println("Connected to wifi");
+
   pinMode(redPin, OUTPUT);
   pinMode(yellowPin, OUTPUT);
   pinMode(greenPin, OUTPUT);
+
 }
 
 void loop() {
-  // Make an HTTPS request to Firebase
-  if(Firebase.getString(Data, path))
-  {
-    Serial.print("set ligh: ");
-    Serial.println(Data.stringData());
-    setTrafficLight(Data.stringData());
+
+client.connect(host, 443);
+String path = "/light.json?auth=";
+client.println("GET " + path + auth + " HTTP/1.1");
+client.println("Host: " + String(host));
+client.println("Connection: close");
+client.println("Accept: application/json");
+client.println();
+
+while (client.connected()) {
+  String line = client.readStringUntil('\n');
+  if (line == "\r" || line.length() == 0) {
+    break;
   }
-  delay(50);
 }
+
+String content = "";
+unsigned long timeout = millis();
+while (client.connected() && millis() - timeout < 5000) {
+  while (client.available()) {
+    content = client.readString();
+  }
+}
+
+content = content.substring(1, content.length() - 1);
+
+Serial.println("Response Light:");
+Serial.println(content);
+setTrafficLight(content);
+}
+
 
 // Function to set the traffic light based on the response
 void setTrafficLight(String color) {
